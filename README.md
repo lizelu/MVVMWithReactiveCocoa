@@ -136,18 +136,271 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 * (3) reduce块中是合并规则：把numbers中的值拼接到letters信号量中的值后边。
 * (4) 经过上面的步骤就是创建所需的相关信号量，也就是相当于架好运输的管道。接着我们就可以通过sendNext方法来往信号量中发送值了，也就是往管道中进行灌水。
 ```Objective-C
+//组合信号
+- (void)combiningLatest{
+    RACSubject *letters = [RACSubject subject];
+    RACSubject *numbers = [RACSubject subject];
+    
+    [[RACSignal
+     combineLatest:@[letters, numbers]
+     reduce:^(NSString *letter, NSString *number){
+         return [letter stringByAppendingString:number];
+     }]
+     subscribeNext:^(NSString * x) {
+         NSLog(@"%@", x);
+     }];
+    
+    //B1 C1 C2
+    [letters sendNext:@"A"];
+    [letters sendNext:@"B"];
+    [numbers sendNext:@"1"];
+    [letters sendNext:@"C"];
+    [numbers sendNext:@"2"];
+}
 ```
-
-```Objective-C
-```
-```Objective-C
-```
-
-
-##信号量合并
+上面示例的运行输出结果如下：
+![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105141027430-538709851.png)
+下面是自己画的原理图，思路应该还算是清晰。
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105142321024-1751623998.png)
+
+####5.信号的合并（merge）
+
+信号合并就理解起来就比较简单了，merge信号量规则比较简单，就是把多个信号量，放入数组中通过merge函数来合并数组中的所有信号量为一个。类比一下，合并后，无论哪个水管中有水都会在merge产生的水管中流出来的。下方是merge信号量的代码：
+
+* (1) 创建三个自定义信号量, 用于merge
+* (2) 合并上面创建的3个信号量
+* (3) 往信号里灌入数据
+```Objective-C
+//合并信号
+- (void)merge {
+    RACSubject *letters = [RACSubject subject];
+    RACSubject *numbers = [RACSubject subject];
+    RACSubject *chinese = [RACSubject subject];
+    
+    [[RACSignal
+     merge:@[letters, numbers, chinese]]
+     subscribeNext:^(id x) {
+        NSLog(@"merge:%@", x);
+    }];
+    
+    [letters sendNext:@"AAA"];
+    [numbers sendNext:@"666"];
+    [chinese sendNext:@"你好！"];
+}
+```
+上面代码运行结果如下：
+![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105162601899-778954145.png)
+上面示例的原理图如下：
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105165000633-1417442850.png)
-##工作原理图
+
+
+##五. 在MVVM中引入RactiveCocoa
+
+学以致用，最后来个简单的实例，来感受一下如何在MVVM中使用RactiveCocoa。当然今天RAC的应用是非常简单的，但原理就是这样的。接下啦我们要使用RAC模拟一下登录功能，当然，网络请求也是模拟的，这不是重点。重点在于如何在MVVM各层之间使用RAC的信号量来更方便的在各个层之间进行响应式数据交互。下面这个实例的UI是非常简单的，并且实现起来也是灰常简单的，关键还是在于RAC的应用。
+
+搭建Demo所需UI，用户界面非常简单，公有两个用户界面，一个是登录页面（两个输入框，一个登录按钮），一个是登录后跳转的页面（一个展示用户名和密码的Label）。下方是使用Storyboard实现的用户登录页面。实现完后，个两个页面各自关联一个ViewContorller类。
+![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151106130708821-2027001588.png)
+
+下方是整个小Demo的工程目录，因为我们今天的重点是如何在MVVM中使用RAC, 所以重点在于RAC的应用，对于MVVM的分层就简化一些。下方有VC层，在VC层中有两个视图控制器，一个是登录使用的视图控制器（ViewContorller）另一个是登录成功后的视图控制器（LoginSuccessViewController）。而ViewModel中则是负责登录的ViewModel业务逻辑层，该层中负责数据验证，网络请求，数据存储等一些与UI无关的业务逻辑。
+![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151106130818492-1654876034.png)
+
+ 
+
+因为ViewModel层是独立于UI层而存在的，所以可以在没有UI的情况下我们就可以去实现相应模块的ViewModel层。这正好减少了个个层次间的耦合性，同时也提高了可测试性，总体上改善了可维护性。好废话少说，接下来要实现登录的ViewModel层。
+
+* (1) 登录ViewModel层对应的类的头文件中的内容如下所示（VCViewModel.h）, 其实下方一些常用的信号量可以抽象出来放到ViewModel的父类中，这为了简化Demo没有做父类的抽象。下方就是VCViewModel中interface定义的公有属性和公有方法（Public）。userName和password(NSString类型) 用来绑定用户输入的用户名和密码。下方三个自定义信号量successObject, failureObject, errorObject 用来发送网络请求的数据。successObject负责处理网络请求成功且符合正常业务逻辑的事件， failureObject负责网络请求成功不符合正常业务逻辑的处理，errorObject负责网络异常处理。
+```Objective-C
+//
+//  VCViewModel.h
+//  ReactiveCocoaDemo
+//
+//  Created by Mr.LuDashi on 15/10/19.
+//  Copyright © 2015年 ZeluLi. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface VCViewModel : NSObject
+@property (nonatomic, strong) NSString *userName;
+@property (nonatomic, strong) NSString *password;
+@property (nonatomic, strong) RACSubject *successObject;
+@property (nonatomic, strong) RACSubject *failureObject;
+@property (nonatomic, strong) RACSubject *errorObject;
+
+- (id) buttonIsValid;
+- (void)login;
+@end
+```
+
+上面可能说的有些抽象，结合项目中的实例来解释一下什么时候发送successObject信号量，如何发送failureObject信号量，何时使用errorObject信号量。
+
+以某些理财App中购买理财产品的业务流程为例。在用户下单之前先去判断用户是否实名认证以及绑定银行卡，如果用户已经实名和绑定银行卡就走正常支付流程（用户就是想去下单购买），VM就往VC发送successObject信号，当前VC就会根据信号量的指示跳转到下单支付页面。  但是如果用户没有实名或者绑卡，那么VM就给VC发送failureObject信号，根据信号量中的参数来判断是走实名认证流程还是走绑定银行卡流程。 errorObject就比较简单了，网络异常，后台服务器抛出的异常等不需要iOS这边做业务逻辑处理的，就放在errorObject中负责错误信息的展示。
+
+文字说完了，如果有些小伙伴还不太明白，那看下面这张原理图吧。把三种信号量我们可以类比成十字路口的红绿灯。successObject就是绿灯，可以走正常流程。failureObject是黄灯，先等一下，完成该做的就可以走绿灯了。而errorObject就是一红灯，报错异常，终止业务流程并提升错误信息。有图有真相，到这儿如果还不理解我就没招了。
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151106134217602-2124107075.png)
-##运行结果
+在Public方法中- (id) buttonIsValid; 负责返回登录按钮是否可用的信号量。- (void)login;发起网络请求，调用登录网络接口。
+
+　　
+
+* (2)代码的具体实现如下（VCViewModel.m中的代码），私有属性如下。userNameSignal用来存储用户名的信号量，passwordSignal是用来存储密码的信号量。reqestData则是用来存储返回数据的。
+```Objective-C
+@interface VCViewModel ()
+@property (nonatomic, strong) RACSignal *userNameSignal;
+@property (nonatomic, strong) RACSignal *passwordSignal;
+@property (nonatomic, strong) NSArray *requestData;
+@end
+```
+
+* (3)VCViewModel的初始化方法如下，负责初始化属性。
+```Objective-C
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        [self initialize];
+    }
+    return self;
+}
+
+- (void)initialize {
+    _userNameSignal = RACObserve(self, userName);
+    _passwordSignal = RACObserve(self, password);
+    _successObject = [RACSubject subject];
+    _failureObject = [RACSubject subject];
+    _errorObject = [RACSubject subject];
+}
+```
+* (4)发送登录按钮是否可用信号的方法如下，主要用到了信号量的合并。
+```Objective-C
+//合并两个输入框信号，并返回按钮bool类型的值
+- (id) buttonIsValid {
+    
+    RACSignal *isValid = [RACSignal
+                          combineLatest:@[_userNameSignal, _passwordSignal]
+                          reduce:^id(NSString *userName, NSString *password){
+                              return @(userName.length >= 3 && password.length >= 3);
+                          }];
+    
+    return isValid;
+}
+```
+
+
+* (5) 模拟网络请求的发送，并发出网络请求成功的信号，具体代码如下
+```Objective-C
+- (void)login{
+    
+    //网络请求进行登录
+    _requestData = @[_userName, _password];
+    
+    //成功发送成功的信号
+    [_successObject sendNext:_requestData];
+    
+    //业务逻辑失败和网络请求失败发送fail或者error信号并传参
+
+}
+```
+
+## 六、测试
+上面是VM的实现，如果要进行单元测试的话，就对相应的VM类进行初始化，调用相应的函数进行单元测试即可。接着就是看如何在相应的VC模块中使用VM。
+
+#### 1 在VC中实例化相应的VM类，并绑定相应的参数和实现接收不同信号的方法，具体代码如下：
+```Objective-C
+//关联ViewModel
+- (void)bindModel {
+    _viewModel = [[VCViewModel alloc] init];
+    
+    
+    RAC(self.viewModel, userName) = self.userNameTextField.rac_textSignal;
+    RAC(self.viewModel, password) = self.passwordTextField.rac_textSignal;
+    RAC(self.loginButton, enabled) = [_viewModel buttonIsValid];
+    
+    @weakify(self);
+    
+    //登录成功要处理的方法
+    [self.viewModel.successObject subscribeNext:^(NSArray * x) {
+        @strongify(self);
+        LoginSuccessViewController *vc = [[UIStoryboard storyboardWithName:@"Main" bundle:[NSBundle mainBundle]] instantiateViewControllerWithIdentifier:@"LoginSuccessViewController"];
+        vc.userName = x[0];
+        vc.password = x[1];
+        [self presentViewController:vc animated:YES completion:^{
+            
+        }];
+    }];
+    
+    //fail
+    [self.viewModel.failureObject subscribeNext:^(id x) {
+        
+    }];
+    
+    //error
+    [self.viewModel.errorObject subscribeNext:^(id x) {
+        
+    }];
+
+}
+```
+
+
+#### 2、点击登录按钮，调用VM中登录相应的网络请求方法即可
+```Objective-C
+- (void)onClick {
+    //按钮点击事件
+    [[self.loginButton rac_signalForControlEvents:UIControlEventTouchUpInside]
+     subscribeNext:^(id x) {
+         [_viewModel login];
+     }];
+}
+```
+
+
+到此为止，一个完整模拟登录模块的RAC下的MVVM就实现完毕。当然上面的Demo是非常简陋的，还有好多地方需要进化。不过麻雀虽小，道理你懂得。主要是通过上面的Demo来感受一下RAC中的信号量机制以及应用场景。
+
+上面代码写完，我们就可以运行看一下运行效果了，下方是运行后的效果，
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151106141713821-1314494999.png)
+
+#### ViewModel:
+
+* Kicking off network or database requests
+
+* Determining when information should be hidden or shown
+
+* Date and number formatting
+
+* Localization
+
+ 
+
+#### ViewController：
+
+* Layout
+
+* Animations
+
+* Device rotation 
+
+* View and window transitions
+
+* Presenting loaded UI
+
+
+其他参考资料：
+
+        https://github.com/ReactiveCocoa/ReactiveViewModel
+
+        http://www.teehanlax.com/blog/model-view-viewmodel-for-ios/
+
+        http://www.teehanlax.com/blog/getting-started-with-reactivecocoa/
+
+        http://nshipster.cn/reactivecocoa/
+
+        http://limboy.me/ios/2013/06/19/frp-reactivecocoa.html
+
+        https://vimeo.com/65637501
+
+        http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/
+
+        http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/
+
+        http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/
+
