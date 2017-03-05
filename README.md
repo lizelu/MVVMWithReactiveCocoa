@@ -386,21 +386,21 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 
 其他参考资料：
 
-        https://github.com/ReactiveCocoa/ReactiveViewModel
+        [https://github.com/ReactiveCocoa/ReactiveViewModel](https://github.com/ReactiveCocoa/ReactiveViewModel)
 
-        http://www.teehanlax.com/blog/model-view-viewmodel-for-ios/
+        [http://www.teehanlax.com/blog/model-view-viewmodel-for-ios/](http://www.teehanlax.com/blog/model-view-viewmodel-for-ios/)
 
-        http://www.teehanlax.com/blog/getting-started-with-reactivecocoa/
+        [http://www.teehanlax.com/blog/getting-started-with-reactivecocoa/](http://www.teehanlax.com/blog/getting-started-with-reactivecocoa/)
 
-        http://nshipster.cn/reactivecocoa/
+        [http://nshipster.cn/reactivecocoa/](http://nshipster.cn/reactivecocoa/)
 
-        http://limboy.me/ios/2013/06/19/frp-reactivecocoa.html
+        [http://limboy.me/ios/2013/06/19/frp-reactivecocoa.html](http://limboy.me/ios/2013/06/19/frp-reactivecocoa.html)
 
-        https://vimeo.com/65637501
+        [https://vimeo.com/65637501](https://vimeo.com/65637501)
 
-        http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/
+        [http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/](http://southpeak.github.io/blog/2014/08/08/mvvmzhi-nan-yi-:flickrsou-suo-shi-li/)
 
-        http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/
+        [http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/](http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-%5B%3F%5D-:xin-hao/)
 
-        http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/
+        [http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/](http://southpeak.github.io/blog/2014/08/02/reactivecocoazhi-nan-er-:twittersou-suo-shi-li/)
 
