@@ -2,12 +2,12 @@
 iOS开发之ReactiveCocoa下的MVVM
 最近工作比较忙，但还是出来更新博客了，今天给大家分享一些ReactiveCocoa以及MVVM的一些东西，干活还是比较足的。在之前发表过一篇博文，名字叫做[《iOS开发之浅谈MVVM的架构设计与团队协作》](http://www.cnblogs.com/ludashi/p/4211556.html)，大体上讲的就是使用Block回调的方式实现MVVM的。在写上篇文章时也知道有ReactiveCocoa这个函数响应式编程的框架，并且有许多人用它来更好的实现MVVM。所以在上篇博客发表后，有些同行给评论建议看一下ReactiveCocoa的东西，所以就系统的看了一下ReactiveCocoa的东西。不过有一点要说明的就是，不使用ReactiveCocoa是可以实现MVVM的，并非使用MVVM模式你就必须的使用ReactiveCocoa的东西，你可以使KVO,Block,Delegate,Notification等手段，而ReactiveCocoa更优雅的实现了这个过程。ReactiveCocoa就是一个响应式编程的框架，它会使MVVM每层之间交互起来更为方便，所以经常和MVVM联系在一起。
 
-##一.函数响应式编程（Function Reactive Programming）
+## 一.函数响应式编程（Function Reactive Programming）
 
 关于函数响应式编程的东西，我想引用国外这个ReactiveCocoa教学视频,视频链接[https://vimeo.com/65637501](https://vimeo.com/65637501)中的一张PPT来简单的说一下什么是函数响应式编程。那就直接上图，下图是上方视频链接的截图，很形象的解释了什么是函数响应式编程。简单的说下方c = a + b 定义好后，当a的值变化后，c的值就会自动变化。不过a的值变化时会产生一个信号，这个信号会通知c根据a变化的值来变化自己的值。b的值变化同样也影响c的值。下图很好的表达了这个思想。在此就不做赘述了。
 ![](http://images2015.cnblogs.com/blog/545446/201510/545446-20151029165449466-94607195.png)
 
-##二. ReactiveCocoa简介
+## 二. ReactiveCocoa简介
 
 先简单的介绍一下什么是ReactiveCocoa框架，然后通过实例好好的去搞一搞这个框架，最后就是如何在项目中使用了。关于ReactiveCocoa的理解一些博客（见本篇博客中的链接分享）中把ReactiveCocoa比喻成管道，ReactiveCocoa中的Signal就是管道中的水流。使用ReactiveCocoa可以方便的在MVVM各层之间架起沟通的管道，便于每层之间的交互。现在在我们做的工程中已经在使用ReactiveCocoa框架了，用起来的感觉是非常爽的，好用！
 
@@ -15,29 +15,29 @@ iOS开发之ReactiveCocoa下的MVVM
 
 ReactiveCocoa中对Block的使用可谓是淋漓尽致，如果对Block使用不熟的朋友可以补一下Block的东西，然后在回头看一下ReactiveCocoa的东西。关于ReactiveCocoa更多的东西，请参考Github上的链接[https://github.com/ReactiveCocoa/ReactiveCocoa](https://github.com/ReactiveCocoa/ReactiveCocoa)。
 
-##三. 在工程中引入ReactiveCocoa
+## 三. 在工程中引入ReactiveCocoa
 
-####1.你可以使用Github上的加入方式如下所示，本人感觉比较麻烦，就没有使用，采用的第二种方法（CocoaPods）。
+#### 1.你可以使用Github上的加入方式如下所示，本人感觉比较麻烦，就没有使用，采用的第二种方法（CocoaPods）。
 ![](http://images2015.cnblogs.com/blog/545446/201510/545446-20151029173053075-602730902.png)
 
-####2.上面的步骤难免有些麻烦，所以用CocoaPods更为便捷一些，Profile文件中的内容如下所示，我用的是2.5版本。3.0后就支持Swift了，设置完Profile文件后，pod install即可。
+#### 2.上面的步骤难免有些麻烦，所以用CocoaPods更为便捷一些，Profile文件中的内容如下所示，我用的是2.5版本。3.0后就支持Swift了，设置完Profile文件后，pod install即可。
 ![](http://images2015.cnblogs.com/blog/545446/201510/545446-20151029173527310-1882275970.png)
 
 你可以pod search ReactiveCocoa看一下版本，选择你需要的版本即可。
 ![](http://images2015.cnblogs.com/blog/545446/201510/545446-20151029174451482-429254438.png)
 
-##四.使用ReactiveCocoa
+## 四.使用ReactiveCocoa
 
 下方会通过一些简单的实例来介绍一下信号量机制和一些常用的方法。
 
-####1.引入相应的头文件
+#### 1.引入相应的头文件
 
 在工程中引入下方的头文件（建议在Pch文件中引入）就可以使用我们的ReactiveCocoa框架了
 ```Objective-C
 #import <ReactiveCocoa/ReactiveCocoa.h>
 #import <ReactiveCocoa/RACEXTScope.h>
 ```
-####2. Sequence和Map
+#### 2. Sequence和Map
 
 Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组，我们可以暂且把Sequence看做绑定信号量的数组吧。在OC中的NSArray可以通过rac_sequence方法转换成ReactiveCocoa中的Sequence，然后就可以调用处理信号的一些方法了。
 
@@ -84,7 +84,7 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 }
 ```
 
-####3.信号量开关(Switch)
+#### 3.信号量开关(Switch)
 
 上面把信号量比喻成水管，那么Switch就是水龙头呢。通过Switch我们可以控制那个信号量起作用，并且可以在信号量之间进行切换。也可以这么理解，把Switch看成另一段水管，Switch对接那个水管，就流那个水管的水，这样比喻应该更为贴切一些。下方是一个关于Switch的一个小实例。
 
@@ -127,7 +127,7 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 上面代码输出结果如下：
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151103110252539-74996119.png)
 
-4.信号量的合并
+#### 4.信号量的合并
 
 信号量的合并说白了就是把两个水管中的水合成一个水管中的水。但这个合并有个限制，当两个水管中都有水的时候才合并。如果一个水管中有水，另一个水管中没有水，那么有水的水管会等到无水的水管中来水了，在与这个水管中的水按规则进行合并。下面这个实例就是把两个信号量进行合并。
 
@@ -163,7 +163,7 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 下面是自己画的原理图，思路应该还算是清晰。
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105142321024-1751623998.png)
 
-####5.信号的合并（merge）
+#### 5.信号的合并（merge）
 
 信号合并就理解起来就比较简单了，merge信号量规则比较简单，就是把多个信号量，放入数组中通过merge函数来合并数组中的所有信号量为一个。类比一下，合并后，无论哪个水管中有水都会在merge产生的水管中流出来的。下方是merge信号量的代码：
 
@@ -194,7 +194,7 @@ Sequence:队列，是ReactiveCocoa中引入的一个类型，它类似于数组�
 ![](http://images2015.cnblogs.com/blog/545446/201511/545446-20151105165000633-1417442850.png)
 
 
-##五. 在MVVM中引入RactiveCocoa
+## 五. 在MVVM中引入RactiveCocoa
 
 学以致用，最后来个简单的实例，来感受一下如何在MVVM中使用RactiveCocoa。当然今天RAC的应用是非常简单的，但原理就是这样的。接下啦我们要使用RAC模拟一下登录功能，当然，网络请求也是模拟的，这不是重点。重点在于如何在MVVM各层之间使用RAC的信号量来更方便的在各个层之间进行响应式数据交互。下面这个实例的UI是非常简单的，并且实现起来也是灰常简单的，关键还是在于RAC的应用。
 
